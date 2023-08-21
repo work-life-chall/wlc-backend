@@ -13,7 +13,7 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false)
@@ -22,6 +22,12 @@ public class UserEntity {
     private String comCode;
 
     private int role;
+
+    private boolean isDisabled = false;
+
+    private int failureCnt;
+
+    private boolean locked;
 
 //    @Builder
 //    public User(String id, String name) {

@@ -1,15 +1,15 @@
 package com.bonfire.challenge.vo;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.springframework.data.annotation.Id;
 
 @Data
 public class RequestLogin {
-    @NotNull
+    @NotBlank
     @Id
     private String username;
 
-    @NotNull
+    @NotBlank
     private String password;
 }

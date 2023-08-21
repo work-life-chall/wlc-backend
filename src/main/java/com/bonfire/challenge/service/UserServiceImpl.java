@@ -3,7 +3,6 @@ package com.bonfire.challenge.service;
 import com.bonfire.challenge.dto.UserDto;
 import com.bonfire.challenge.entity.UserEntity;
 import com.bonfire.challenge.repository.UserRepository;
-import com.bonfire.challenge.vo.RequestUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -53,6 +53,44 @@ public class UserServiceImpl implements UserService {
         if (userEntity == null)
             throw new UsernameNotFoundException(username);
         return new ObjectMapper().convertValue(userEntity, UserDto.class);
+    }
+
+    @Override
+    public List<UserDto> getUsers() {
+        List<UserEntity> users = userRepository.findAll();
+        // 비활성화되지 않은 유저리스트
+        return users.stream()
+                .filter(u -> !u.isDisabled())
+                .map(u -> new ObjectMapper().convertValue(u, UserDto.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void updateUser(UserDto userDto) {
+        UserEntity updateUser = userRepository.findByUsername(userDto.getUsername());
+        updateUser.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
+        updateUser.setDisabled(false);
+        userRepository.save(updateUser);
+        log.info("[updateUser] update user info : {}" , updateUser.toString());
+    }
+
+    @Override
+    public void deleteUser(String username) {
+        UserEntity deleteUser = userRepository.findByUsername(username);
+        userRepository.delete(deleteUser);
+        log.info("[deleteUser] delete user info : {}" , deleteUser.toString());
+    }
+
+    /**
+     * 로그인 횟수 & 계정 잠금 초기
+     * @param username
+     */
+    @Override
+    public void resetFailureCntAndLock(String username) {
+        UserEntity userEntity = userRepository.findByUsername(username);
+        userEntity.setFailureCnt(0);
+        userEntity.setLocked(false);
+        userRepository.save(userEntity);
     }
 
 }

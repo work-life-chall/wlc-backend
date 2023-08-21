@@ -59,6 +59,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         // 로그인 성공 시
         String username = ((User)authResult.getPrincipal()).getUsername();
+        userService.resetFailureCntAndLock(username);       // 로그인 시도 횟수, 계정 잠금 초기화
         UserDto userDetails = userService.getUserDetailsByUsername(username);
         log.info("login success - username : {}, role : {} " , userDetails.getUsername(), userDetails.getRole());
 
