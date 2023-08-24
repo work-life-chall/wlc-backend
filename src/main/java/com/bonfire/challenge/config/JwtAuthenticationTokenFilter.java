@@ -28,12 +28,10 @@ import static org.springframework.security.config.Elements.JWT;
 
 @Slf4j
 public class JwtAuthenticationTokenFilter extends BasicAuthenticationFilter {
-    private UserRepository userRepository;
     private Environment env;
 
-    public JwtAuthenticationTokenFilter(AuthenticationManager authenticationManager, UserRepository userRepository, Environment env) {
+    public JwtAuthenticationTokenFilter(AuthenticationManager authenticationManager, Environment env) {
         super(authenticationManager);
-        this.userRepository = userRepository;
         this.env = env;
     }
 

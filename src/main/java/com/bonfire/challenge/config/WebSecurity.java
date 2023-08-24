@@ -27,7 +27,6 @@ public class WebSecurity {
     private final Environment env;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final UserService userService;
-    private final UserRepository userRepository;
     private final ObjectPostProcessor<Object> objectPostProcessor;
     private final LoginFailureHandler loginFailureHandler;
 
@@ -40,14 +39,10 @@ public class WebSecurity {
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .addFilter(getAuthenticationFilter())
                 .formLogin(login -> {
-                            try {
                                 login	// form 방식 로그인 사용
                                         .defaultSuccessUrl("/", true)
-                                        .permitAll()
-                                        .failureHandler(loginFailureHandler);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
+                                        .failureHandler(authenticationFailureHandler())
+                                        .permitAll();
                         }
                 )
                 .logout(withDefaults());
@@ -56,7 +51,7 @@ public class WebSecurity {
 
     private JwtAuthenticationTokenFilter getJwtAuthorizationFilter() throws Exception {
         AuthenticationManagerBuilder builder = new AuthenticationManagerBuilder(objectPostProcessor);
-        return new JwtAuthenticationTokenFilter(authenticationManager(builder), userRepository, env);
+        return new JwtAuthenticationTokenFilter(authenticationManager(builder), env);
     }
 
     private AuthenticationFilter getAuthenticationFilter() throws Exception {
@@ -67,5 +62,10 @@ public class WebSecurity {
     public AuthenticationManager authenticationManager(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userService).passwordEncoder(bCryptPasswordEncoder);
         return auth.build();
+    }
+
+    @Bean
+    public AuthenticationFailureHandler authenticationFailureHandler() {
+        return new LoginFailureHandler(userService);
     }
 }
