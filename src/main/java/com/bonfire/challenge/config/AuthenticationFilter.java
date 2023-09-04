@@ -14,10 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
@@ -28,12 +25,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final UserService userService;
     private final Environment env;
+    private String attemptLoginUsername;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager, UserService userService, Environment env) {
         super.setAuthenticationManager(authenticationManager);
@@ -51,12 +50,17 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
         try {
             RequestLogin creds = new ObjectMapper().readValue(request.getInputStream(), RequestLogin.class);
             log.info("[attemptAuthentication] creds: {}", creds.toString());
+            attemptLoginUsername = creds.getUsername();
+            UserDto loginUser = userService.getUserDetailsByUsername(attemptLoginUsername);
+
+            // 계정이 잠긴 경우
+            if (loginUser.isLocked()) {
+                // 로그인 시도 거부
+                throw new LockedException("Account is locked");
+            }
+
             return getAuthenticationManager().authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            creds.getUsername(),
-                            creds.getPassword(),
-                            new ArrayList<>()
-                    )
+                    new UsernamePasswordAuthenticationToken(attemptLoginUsername, creds.getPassword(), new ArrayList<>())
             );
         } catch (IOException e) {
             log.error("[attemptAuthentication] msg: {}", e.getMessage());
@@ -74,15 +78,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
         log.info("[successfulAuthentication] login success - username : {}, role : {} " , userDetails.getUsername(), userDetails.getRole());
 
         try {
-            Key key = Keys.hmacShaKeyFor(Objects.requireNonNull(env.getProperty("token.secret")).getBytes(StandardCharsets.UTF_8));
-
-            String token = Jwts.builder()
-                    .setSubject(userDetails.getId())
-                    .claim("auth", userDetails.getRole())
-                    .setExpiration(new Date(System.currentTimeMillis() + Long.parseLong(Objects.requireNonNull(env.getProperty("token.expiration_time")))))
-                    .signWith(key, SignatureAlgorithm.HS512)
-                    .compact();
-
+            String token = generateJwtToken(userDetails.getId(), userDetails.getRole());
             log.info("[successfulAuthentication] token create success");
 
             response.addHeader("token", token);
@@ -95,14 +91,8 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-        String error = failed.getMessage();
-
-        log.info("[unsuccessfulAuthentication] login failure - username: {}, error msg: {}", username, error);
-
         if(failed instanceof BadCredentialsException) {
-            loginFailureCount(username);
+            loginFailureCount(attemptLoginUsername);
         }
 
         failed.printStackTrace();
@@ -110,10 +100,23 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     /**
+     * jwt 토큰 생성
+     */
+    private String generateJwtToken(String userId, int role) {
+        Key key = Keys.hmacShaKeyFor(Objects.requireNonNull(env.getProperty("token.secret")).getBytes(StandardCharsets.UTF_8));
+        return Jwts.builder()
+                .setSubject(userId)
+                .claim("auth", role)
+                .setExpiration(new Date(System.currentTimeMillis() + Long.parseLong(Objects.requireNonNull(env.getProperty("token.expiration_time")))))
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    /**
      * 비밀번호 5회 틀리면 계정 lock
      */
-    private void loginFailureCount(String username) {
-        UserDto loginUser = userService.getUserDetailsByUsername(username);
+    private void loginFailureCount(String attemptLoginUsername) {
+        UserDto loginUser = userService.getUserDetailsByUsername(attemptLoginUsername);
         int currFailureCnt = loginUser.getFailureCnt() + 1;
         if (!loginUser.isLocked()) {
             //failureCnt++
@@ -133,6 +136,8 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
         try {
             String message = getExceptionMessage(exception);
             response.sendError(401, message);
+
+            log.info("[sendErrorToResponse] login failure - username: {}, error msg: {}", attemptLoginUsername, message);
         } catch (IOException e) {
             e.printStackTrace();
         }

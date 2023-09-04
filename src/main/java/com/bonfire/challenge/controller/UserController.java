@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestController
+@Slf4j
 public class UserController {
     private final UserService userService;
 
@@ -32,7 +34,8 @@ public class UserController {
     @PostMapping("/user")
     public ResponseEntity<UserEntity> createUser(@Valid @RequestBody RequestUser requestUser, Errors errors) {
         // 회원 등록 시 유효성 검사 실패
-        if (errors.hasErrors()) {
+        if (errors.hasErrors() && errors.hasFieldErrors("username")) {
+            log.error("[createUser] error msg: {}", errors.getAllErrors().get(0).getDefaultMessage());
             throw new ValidationException(errors.toString());
         }
 
@@ -65,7 +68,8 @@ public class UserController {
     @PatchMapping("/user")
     public ResponseEntity<UserEntity> updateUser(@Valid @RequestBody RequestUser requestUser, Errors errors) {
         // 회원 수정 시 유효성 검사 실패
-        if (errors.hasErrors()) {
+        if (errors.hasErrors() && errors.hasFieldErrors("password")) {
+            log.error("[createUser] error msg: {}", errors.getAllErrors().get(1).getDefaultMessage());
             throw new ValidationException(errors.toString());
         }
 

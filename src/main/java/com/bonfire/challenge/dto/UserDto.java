@@ -11,6 +11,7 @@ public class UserDto {
     private String password;
     private String comCode;
     private int role;
+    private boolean isDisabled;
     private int failureCnt;
     private boolean locked;
 }

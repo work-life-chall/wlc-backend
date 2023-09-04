@@ -67,11 +67,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updateUser(UserDto userDto) {
-        UserEntity updateUser = userRepository.findByUsername(userDto.getUsername());
-        updateUser.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
-        updateUser.setDisabled(false);
-        userRepository.save(updateUser);
-        log.info("[updateUser] update user info : {}" , updateUser.toString());
+        UserEntity userEntity = userRepository.findByUsername(userDto.getUsername());
+
+        if (userEntity != null) {
+            userEntity.setRole(userDto.getRole());
+            userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
+            userEntity.setLocked(userDto.isLocked());
+            userEntity.setComCode(userDto.getComCode());
+            userEntity.setFailureCnt(userDto.getFailureCnt());
+            userEntity.setLocked(userDto.isLocked());
+
+            // 수정된 사용자 정보를 저장
+            userRepository.save(userEntity);
+            log.info("[updateUser] update user info : {}" , userEntity.toString());
+        }
     }
 
     @Override

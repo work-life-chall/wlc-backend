@@ -11,7 +11,7 @@ public class RequestUser {
 
     @Id
     @NotBlank
-    @Username
+    @Username(message = "이미 존재하는 ID 입니다.")
     private String username;
 
     @NotBlank
