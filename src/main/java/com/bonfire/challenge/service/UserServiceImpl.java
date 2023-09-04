@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 로그인 횟수 & 계정 잠금 초기
+     * 로그인 횟수 & 계정 잠금 초기화
      * @param username
      */
     @Override

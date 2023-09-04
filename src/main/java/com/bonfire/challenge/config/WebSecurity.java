@@ -1,6 +1,5 @@
 package com.bonfire.challenge.config;
 
-import com.bonfire.challenge.repository.UserRepository;
 import com.bonfire.challenge.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +14,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -28,7 +26,6 @@ public class WebSecurity {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final UserService userService;
     private final ObjectPostProcessor<Object> objectPostProcessor;
-    private final LoginFailureHandler loginFailureHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -41,7 +38,6 @@ public class WebSecurity {
                 .formLogin(login -> {
                                 login	// form 방식 로그인 사용
                                         .defaultSuccessUrl("/", true)
-                                        .failureHandler(authenticationFailureHandler())
                                         .permitAll();
                         }
                 )
@@ -64,8 +60,4 @@ public class WebSecurity {
         return auth.build();
     }
 
-    @Bean
-    public AuthenticationFailureHandler authenticationFailureHandler() {
-        return new LoginFailureHandler(userService);
-    }
 }
