@@ -78,4 +78,10 @@ public class UserController {
         userService.deleteUser(username);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PostMapping("/user/{username}/reset")
+    public ResponseEntity<String> resetPassword(@PathVariable String username) {
+        userService.resetPassword(username);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

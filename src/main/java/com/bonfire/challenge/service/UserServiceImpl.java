@@ -93,4 +93,13 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userEntity);
     }
 
+    @Override
+    public void resetPassword(String username) {
+        UserEntity userEntity = userRepository.findByUsername(username);
+        if (userEntity != null) {
+            userEntity.setPassword(userEntity.getComCode());    // 비밀번호 초기화 -> 회사코드
+            userRepository.save(userEntity);
+        }
+    }
+
 }

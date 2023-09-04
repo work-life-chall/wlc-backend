@@ -13,4 +13,5 @@ public interface UserService extends UserDetailsService {
     void updateUser(UserDto userDto);
     void deleteUser(String username);
     void resetFailureCntAndLock(String username);
+    void resetPassword(String username);
 }
