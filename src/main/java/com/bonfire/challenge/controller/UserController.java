@@ -14,7 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.swing.filechooser.FileSystemView;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,8 +51,46 @@ public class UserController {
 
     // 대량 유저 등록
     @PostMapping("/users")
-    public ResponseEntity<UserEntity> createUsers() {
-        // 엑셀 업로드한 대량 유저 등록
+    public ResponseEntity<UserEntity> createUsers(@RequestParam("file") MultipartFile multipartFile) throws IOException {
+        // 엑셀 파일 로컬에 저장
+        String rootPath = FileSystemView.getFileSystemView().getHomeDirectory().toString();
+        String basePath = rootPath + "/" + {{회사코드}};        // 회사 admin 계정의 회사코드 세팅??
+        String filePath = basePath + "/" + multipartFile.getOriginalFilename();
+        File localSaveFile = new File(filePath);
+        multipartFile.transferTo(localSaveFile);
+
+        // 엑셀 파일의 유저 정보 추출
+        List<UserDto> createUsers = new ArrayList<>();
+        String extension = FilenameUtils.getExtension(multipartFile.getOriginalFilename());
+
+        if (!extension.equals("xlsx") && !extension.equals("xls")) {
+            throw new IOException("엑셀 파일만 업로드 해주세요.");
+        }
+
+        Workbook workbook = null;
+
+        if (extension.equals("xlsx")) {
+            workbook = new XSSFWorkbook(file.getInputStream());
+        } else if (extension.equals("xls")) {
+            workbook = new HSSFWorkbook(file.getInputStream());
+        }
+
+        Sheet worksheet = workbook.getSheetAt(0);
+
+        for (int i = 1; i < worksheet.getPhysicalNumberOfRows(); i++) {
+
+            Row row = worksheet.getRow(i);
+
+            UserDto user = new UserDto();
+            user.setUsername(row.getCell(0).getNumericCellValue());
+            user.setComCode(row.getCell(0).getNumericCellValue());
+
+
+            createUsers.add(user);
+        }
+
+        // 유저 정보 DB에 저장
+        userService.createMultiUser(createUsers);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

@@ -43,8 +43,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public int createMultiUser(List<UserDto> userDtos) {
-        return 0;
+    public void createMultiUser(List<UserDto> userDtos) {
+        userDtos.forEach(this::createUser);
     }
 
     @Override
