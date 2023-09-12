@@ -1,13 +1,18 @@
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/challenge
+    url: jdbc:mariadb://localhost:3306/wlc
     driver-class-name: org.mariadb.jdbc.Driver
-    username: root
-    password: 1111
+    username: wlc
+    password: wlcbybonfire
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      location: C:\Users\kyungnan\Desktop\워라챌 프로젝트\엑셀 업로드 파일
 
 token:
   secret: worklifechallengeprojecttokensecretkey01234567891011121314151617181920
