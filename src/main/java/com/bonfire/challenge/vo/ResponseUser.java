@@ -7,5 +7,5 @@ public class ResponseUser {
     private String username;
     private String password;
     private String comCode;
-    private int role;
+    private Role role;
 }

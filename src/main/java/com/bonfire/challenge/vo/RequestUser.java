@@ -21,4 +21,7 @@ public class RequestUser {
     @NotBlank
     private String comCode;
 
+    private int role;
+
+    private boolean isDisabled;
 }

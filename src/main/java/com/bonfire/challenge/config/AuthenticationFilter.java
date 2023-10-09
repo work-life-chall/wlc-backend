@@ -4,6 +4,7 @@ import com.bonfire.challenge.dto.UserDto;
 import com.bonfire.challenge.service.UserService;
 import com.bonfire.challenge.vo.AuthenticationFailureType;
 import com.bonfire.challenge.vo.RequestLogin;
+import com.bonfire.challenge.vo.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -12,6 +13,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.*;
@@ -25,10 +27,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 
 @Slf4j
+@RequiredArgsConstructor
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final UserService userService;
     private final Environment env;
@@ -78,7 +80,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
         log.info("[successfulAuthentication] login success - username : {}, role : {} " , userDetails.getUsername(), userDetails.getRole());
 
         try {
-            String token = generateJwtToken(userDetails.getId(), userDetails.getRole());
+            String token = generateJwtToken(userDetails.getId(), Role.findBy(userDetails.getRole()));
             log.info("[successfulAuthentication] token create success");
 
             response.addHeader("token", token);
@@ -102,11 +104,11 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     /**
      * jwt 토큰 생성
      */
-    private String generateJwtToken(String userId, int role) {
+    private String generateJwtToken(String userId, Role role) {
         Key key = Keys.hmacShaKeyFor(Objects.requireNonNull(env.getProperty("token.secret")).getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
                 .setSubject(userId)
-                .claim("auth", role)
+                .claim("auth", role.name())
                 .setExpiration(new Date(System.currentTimeMillis() + Long.parseLong(Objects.requireNonNull(env.getProperty("token.expiration_time")))))
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
@@ -125,7 +127,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
             if (currFailureCnt >= 5) {
                 loginUser.setLocked(true);      // 로그인 5회 실패 시 계정 잠금
             }
-            userService.updateUser(loginUser);  // db에 저장
+            userService.updateUser(loginUser, false);  // db에 저장
         }
     }
 
