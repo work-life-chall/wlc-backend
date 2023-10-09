@@ -1,6 +1,5 @@
 package com.bonfire.challenge.config;
 
-import com.bonfire.challenge.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
@@ -23,8 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.springframework.security.config.Elements.JWT;
 
 @Slf4j
 public class JwtAuthenticationTokenFilter extends BasicAuthenticationFilter {

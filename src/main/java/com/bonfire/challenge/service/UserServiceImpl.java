@@ -3,6 +3,7 @@ package com.bonfire.challenge.service;
 import com.bonfire.challenge.dto.UserDto;
 import com.bonfire.challenge.entity.UserEntity;
 import com.bonfire.challenge.repository.UserRepository;
+import com.bonfire.challenge.vo.SecurityUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +12,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,10 +28,10 @@ public class UserServiceImpl implements UserService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         log.debug("[loadUserByUsername] username: {}", username);
         Optional<UserEntity> result = Optional.ofNullable(userRepository.findByUsername(username));
-        UserEntity findUser = result.get();
+        UserEntity userEntity = result.get();
+        SecurityUser findUser = new SecurityUser(userEntity);
         log.debug("[loadUserByUsername] findUser: {}", findUser);
-        return new org.springframework.security.core.userdetails.User(findUser.getUsername(), findUser.getPassword(),
-                true, true, true, true, new ArrayList<>());
+        return findUser;
     }
 
     @Override
@@ -66,21 +66,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(UserDto userDto) {
+    public void updateUser(UserDto userDto, boolean isPatched) {
         UserEntity userEntity = userRepository.findByUsername(userDto.getUsername());
 
-        if (userEntity != null) {
-            userEntity.setRole(userDto.getRole());
+        if (userEntity == null)
+            throw new UsernameNotFoundException("해당하는 username DB에 존재하지 않습니다.");
+
+        if (isPatched) {
+            userEntity.setRole(userDto.getRole() == 0 ? userEntity.getRole() : userDto.getRole());
             userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
             userEntity.setLocked(userDto.isLocked());
             userEntity.setComCode(userDto.getComCode());
-            userEntity.setFailureCnt(userDto.getFailureCnt());
-            userEntity.setLocked(userDto.isLocked());
-
-            // 수정된 사용자 정보를 저장
-            userRepository.save(userEntity);
-            log.info("[updateUser] update user info : {}" , userEntity.toString());
+            userEntity.setDisabled(userDto.isDisabled());
         }
+        userEntity.setFailureCnt(userDto.getFailureCnt());
+        userEntity.setLocked(userDto.isLocked());
+        // 수정된 사용자 정보를 저장
+        userRepository.save(userEntity);
+        log.info("[updateUser] update user info : {}" , userEntity.toString());
     }
 
     @Override
@@ -102,11 +105,15 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userEntity);
     }
 
+    /**
+     * 비밀번호 초기화
+     * @param username
+     */
     @Override
     public void resetPassword(String username) {
         UserEntity userEntity = userRepository.findByUsername(username);
         if (userEntity != null) {
-            userEntity.setPassword(userEntity.getComCode());    // 비밀번호 초기화 -> 회사코드
+            userEntity.setPassword(bCryptPasswordEncoder.encode(userEntity.getComCode()));    // 비밀번호 초기화 -> 회사코드);
             userRepository.save(userEntity);
         }
     }

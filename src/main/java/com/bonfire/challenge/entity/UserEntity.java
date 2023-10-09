@@ -29,9 +29,4 @@ public class UserEntity {
 
     private boolean locked;
 
-//    @Builder
-//    public User(String id, String name) {
-//        this.id = id;
-//        this.name = name;
-//    }
 }

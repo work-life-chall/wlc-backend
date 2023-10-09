@@ -10,7 +10,7 @@ public interface UserService extends UserDetailsService {
     void createMultiUser(List<UserDto> userDtos);
     UserDto getUserDetailsByUsername(String username);
     List<UserDto> getUsers();
-    void updateUser(UserDto userDto);
+    void updateUser(UserDto userDto, boolean isPatched);
     void deleteUser(String username);
     void resetFailureCntAndLock(String username);
     void resetPassword(String username);
