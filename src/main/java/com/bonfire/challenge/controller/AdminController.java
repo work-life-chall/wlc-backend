@@ -18,7 +18,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,13 +33,18 @@ import java.util.*;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/admin")
+@RequestMapping("/api/admin")
 public class AdminController {
     private final UserService userService;
     @Value("${spring.servlet.multipart.location}")
     private String location;
 
-    // 개별 유저 등록
+    /**
+     * 유저 개별 등록
+     * @param requestUser
+     * @param errors
+     * @return
+     */
     @PostMapping("/user")
     public ResponseEntity<UserEntity> createUser(@Valid @RequestBody RequestUser requestUser, Errors errors) {
         // 회원 등록 시 유효성 검사 실패
@@ -58,7 +62,12 @@ public class AdminController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    // 대량 유저 등록
+    /**
+     * 유저 대량 등록 (엑셀파일)
+     * @param multipartFile
+     * @return
+     * @throws IOException
+     */
     @PostMapping("/users")
     public ResponseEntity<HashMap<String, Object>> createUsers(@RequestParam("file") MultipartFile multipartFile) throws IOException {
         // 엑셀 파일 로컬에 저장
@@ -106,7 +115,7 @@ public class AdminController {
             throw new ValidationException(errors.toString());
         }
 
-        userService.updateUser(new ObjectMapper().convertValue(requestUser, UserDto.class));
+        userService.updateUser(new ObjectMapper().convertValue(requestUser, UserDto.class), true);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
