@@ -29,7 +29,7 @@ public class WebSecurity {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/login").permitAll());
+        http.authorizeHttpRequests(auth -> auth.requestMatchers("/login","/**").permitAll());
         http.csrf(AbstractHttpConfigurer::disable)
                 // add jwt filters (1. authentication, 2. authorization)
                 .addFilter(getJwtAuthorizationFilter())

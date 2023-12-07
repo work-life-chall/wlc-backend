@@ -11,9 +11,9 @@ public class Challenge {
     @Column(name = "id", nullable = false)
     private Long id;
     @Column(name = "category_id", nullable = false)
-    private int category_id;
+    private int category;
     @Column(name = "company_id", nullable = false)
-    private int company_id;
+    private int company;
     @Column(name = "title", nullable = false)
     private String title;
     @Column(name = "frequency", nullable = false)
